@@ -1,0 +1,987 @@
+{
+	"info": {
+		"_postman_id": "7e0f8fcf-4bfa-4282-8302-318f17db8053",
+		"name": "Instapaper",
+		"description": "This collection works with an environment to support playing with the Instapaper API ([https://www.instapaper.com/api](https://www.instapaper.com/api))",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "1470873"
+	},
+	"item": [
+		{
+			"name": "Simple API",
+			"item": [
+				{
+					"name": "Authenticate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "jsonp",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{Instapaper:RootApiUrl}}/authenticate",
+							"host": [
+								"{{Instapaper:RootApiUrl}}"
+							],
+							"path": [
+								"authenticate"
+							]
+						},
+						"description": "from instapaper.com:  \n  \nThis method validates an Instapaper username and password. Calling this before adding pages is not necessary. Use this if you want to only check credentials without adding a URL to Instapaper, such as when you first prompt the user for Instapaper credentials in a settings screen or on the first Instapaper request.\n\n**URL:** `https://www.instapaper.com/api/authenticate`\n\nParameters:\n\n- `username`\n    \n- `password`\n    \n- `jsonp` -- optional. See [JSONP](https://www.instapaper.com/api/simple#jsonp).\n    \n\nOr you can pass the username and password via HTTP Basic Auth.\n\nResulting status codes:\n\n- **200**: OK\n    \n- **403**: Invalid username or password.\n    \n- **500**: The service encountered an error. Please try again later."
+					},
+					"response": []
+				},
+				{
+					"name": "Add URL to an Instapaper account",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "url",
+									"value": "",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "",
+									"description": "optional, plain text, no HTML, UTF-8. If omitted or empty, Instapaper will crawl the URL to detect a title.",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "selection",
+									"value": "",
+									"description": "optional, plain text, no HTML, UTF-8. Will show up as the description under an item in the interface. Some clients use this to describe where it came from, such as the text of the source Twitter post when sending a link from a Twitter client.",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "redirect",
+									"value": "close",
+									"description": "optional. Specifies that, instead of returning the status code, the resulting page should show an HTML \"Saved!\" notification that attempts to close its own window with Javascript after a short delay. This is useful if you're sending people directly to /api/add URLs from a web application.",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "jsonp",
+									"value": "",
+									"description": "optional. See https://www.instapaper.com/api/simple#jsonp.",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{Instapaper:RootApiUrl}}/add",
+							"host": [
+								"{{Instapaper:RootApiUrl}}"
+							],
+							"path": [
+								"add"
+							]
+						},
+						"description": "from instapaper.com:\n\nResulting status codes:\n\n- **201**: This URL has been successfully added to this Instapaper account.\n    \n- **400**: Bad request or exceeded the rate limit. Probably missing a required parameter, such as `url`.\n    \n- **403**: Invalid username or password.\n    \n- **500**: The service encountered an error. Please try again later.\n    \n\nIf a URL is added that already exists, it will be marked unread and sent to the top of the list. A duplicate will not be created. For convenience, the 201 status will still be returned, even though a new record technically wasn't created.\n\nWhen a 201 is returned from this call, two additional response headers are set:\n\n- **Content-Location**: The saved URL for the newly created item, after any normalization and redirect-following.\n    \n- **X-Instapaper-Title**: The saved title for the page, after any auto-detection."
+					},
+					"response": []
+				}
+			],
+			"description": "Designed for casual use. Does not require an OAuth1 consumer token. Authentication is Basic only.",
+			"auth": {
+				"type": "basic",
+				"basic": [
+					{
+						"key": "password",
+						"value": "{{Instapaper:password}}",
+						"type": "string"
+					},
+					{
+						"key": "username",
+						"value": "{{Instapaper:username}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Full API",
+			"item": [
+				{
+					"name": "OAuth1 Access Token",
+					"item": [
+						{
+							"name": "Gets an OAuth access token for a user and save in Environment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var responseBody = pm.response.text();\r",
+											"var pairs = responseBody.split('&');\r",
+											"\r",
+											"let oauthTokenSecret, oauthToken;\r",
+											"\r",
+											"pairs.forEach((pair) => {\r",
+											"    const [key, value] = pair.split('=');\r",
+											"    if (key === 'oauth_token_secret') {\r",
+											"        oauthTokenSecret = value;\r",
+											"    }\r",
+											"    if (key === 'oauth_token') {\r",
+											"        oauthToken = value;\r",
+											"    }\r",
+											"});\r",
+											"\r",
+											"pm.environment.set('OAuth1:access_token_secret', oauthTokenSecret);\r",
+											"pm.environment.set('OAuth1:access_token', oauthToken);\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "x_auth_username",
+											"value": "{{Instapaper:username}}",
+											"type": "text"
+										},
+										{
+											"key": "x_auth_password",
+											"value": "{{Instapaper:password}}",
+											"type": "text"
+										},
+										{
+											"key": "x_auth_mode",
+											"value": "client_auth",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{Instapaper:RootApiUrl}}/1/oauth/access_token",
+									"host": [
+										"{{Instapaper:RootApiUrl}}"
+									],
+									"path": [
+										"1",
+										"oauth",
+										"access_token"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Account",
+					"item": [
+						{
+							"name": "Bookmarks",
+							"item": [
+								{
+									"name": "Lists the user's unread bookmarks, and can also synchronize reading positions.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "limit",
+													"value": "",
+													"description": "Optional. A number between 1 and 500, default 25.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "folder_id",
+													"value": "",
+													"description": "Optional. Possible values are unread (default), starred, archive, or a folder_id value from /api/1.1/folders/list.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "have",
+													"value": "",
+													"description": "Optional. A concatenation of bookmark_id values that the client already has from the specified folder. See https://www.instapaper.com/api/full.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "highlights",
+													"value": "",
+													"description": "Optional. A '-' delimited list of highlight IDs that the client already has from the specified bookmarks.",
+													"type": "text",
+													"disabled": true
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/list",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Updates the user's reading progress on a single article.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"description": "The bookmark to update.",
+													"type": "text"
+												},
+												{
+													"key": "progress",
+													"value": "",
+													"description": "The user's progress, as a floating-point number between 0.0 and 1.0, defined as the top edge of the user's current viewport, expressed as a percentage of the article's total length.",
+													"type": "text"
+												},
+												{
+													"key": "progress_timestamp",
+													"value": "",
+													"description": "The Unix timestamp value of the time that the progress was recorded. See http://en.wikipedia.org/wiki/Unix_time.",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/update_read_progress",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"update_read_progress"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Adds a new unread bookmark to the user's account.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "url",
+													"value": "",
+													"description": "Required, except when using private sources (see below).",
+													"type": "text"
+												},
+												{
+													"key": "title",
+													"value": "",
+													"description": "Optional. If omitted or empty, the title will be looked up by Instapaper synchronously. This will delay the action, so please specify the title if you have it.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "description",
+													"value": "",
+													"description": "Optional. A brief, plaintext description or summary of the article. Twitter clients often put the source tweet's text here, and Instapaper's bookmarklet puts the selected text here if the user has selected any.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "folder_id",
+													"value": "",
+													"description": "Optional. The integer folder ID as returned by the folders/list method described below.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "resolve_final_url",
+													"value": "",
+													"description": "Optional, default 1. Specify 1 if the url might not be the final URL that a browser would resolve when fetching it, such as if it's a shortened URL, it's a URL from an RSS feed that might be proxied, or it's likely to go through any other redirection when viewed in a browser. This will cause Instapaper to attempt to resolve all redirects itself, synchronously. This will delay the action, so please specify 0 for this parameter if you're reasonably confident that this URL won't be redirected, such as if it's already being viewed in a web browser.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "content",
+													"value": "",
+													"description": "Optional. The full HTML content of the page, or just the <body> node's content if possible, such as the value of document.body.innerHTML in Javascript. Must be UTF-8.",
+													"type": "text",
+													"disabled": true
+												},
+												{
+													"key": "is_private_from_source",
+													"value": "",
+													"description": "Optional. Set this parameter to a non-empty string to set a bookmark to private. A short description label of the source of the private bookmark, such as \"email\" or \"MyNotebook Pro\".",
+													"type": "text",
+													"disabled": true
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/add",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"add"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Permanently deletes the specified bookmark. This is NOT the same as Archive.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/delete",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"delete"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Stars the specified bookmark.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/star",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"star"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Un-stars the specified bookmark.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/unstar",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"unstar"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Moves the specified bookmark to the Archive.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/archive",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"archive"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Moves the specified bookmark to the top of the Unread folder.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/unarchive",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"unarchive"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Returns the specified bookmark's processed text-view HTML, which is always text/html encoded as UTF-8.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "1638492710",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/get_text",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"get_text"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Moves the specified bookmark to a user-created folder.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "bookmark_id",
+													"value": "",
+													"type": "text"
+												},
+												{
+													"key": "folder_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/bookmarks/move",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"bookmarks",
+												"move"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Folders",
+							"item": [
+								{
+									"name": "Output a list of the account's user-created folders.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/folders/list",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"folders",
+												"list"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Creates an organizational folder.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "title",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/folders/add",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"folders",
+												"add"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Deletes the folder and moves any articles in it to the Archive.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "folder_id",
+													"value": "",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/folders/delete",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"folders",
+												"delete"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Re-orders a user's folders.",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "order",
+													"value": "",
+													"description": "a set of folder_id:position pairs joined by commas, where the position is a positive integer 32 bits or less.\nYou must include all of the user's folders for consistent ordering. Invalid or missing folder IDs or positions will be ignored and will not return errors.",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1/folders/set_order",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1",
+												"folders",
+												"set_order"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Highlights",
+							"item": [
+								{
+									"name": "List highlights for <bookmark-id>",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1.1/bookmarks/{{Instapaper:bookmark_id}}/highlights",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1.1",
+												"bookmarks",
+												"{{Instapaper:bookmark_id}}",
+												"highlights"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Create a new highlight for <bookmark-id>",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "text",
+													"value": "",
+													"description": "The text for the highlight",
+													"type": "text"
+												},
+												{
+													"key": "position",
+													"value": "",
+													"description": "Optional. The 0-indexed position of text in the content. Defaults to 0.",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1.1/bookmarks/{{Instapaper:bookmark_id}}/highlight",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1.1",
+												"bookmarks",
+												"{{Instapaper:bookmark_id}}",
+												"highlight"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Delete a highlight",
+									"request": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": []
+										},
+										"url": {
+											"raw": "{{Instapaper:RootApiUrl}}/1.1/highlights/{{Instapaper:highlight_id}}/delete",
+											"host": [
+												"{{Instapaper:RootApiUrl}}"
+											],
+											"path": [
+												"1.1",
+												"highlights",
+												"{{Instapaper:highlight_id}}",
+												"delete"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						},
+						{
+							"name": "Returns the currently logged in user and save the user_id in Environment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var responseBody = pm.response.json();\r",
+											"var userId = responseBody[0].user_id;\r",
+											"\r",
+											"pm.environment.set(\"OAuth1:user_id\", userId);\r",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{Instapaper:RootApiUrl}}/1/account/verify_credentials",
+									"host": [
+										"{{Instapaper:RootApiUrl}}"
+									],
+									"path": [
+										"1",
+										"account",
+										"verify_credentials"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"auth": {
+						"type": "oauth1",
+						"oauth1": [
+							{
+								"key": "addEmptyParamsToSign",
+								"value": true,
+								"type": "boolean"
+							},
+							{
+								"key": "includeBodyHash",
+								"value": true,
+								"type": "boolean"
+							},
+							{
+								"key": "tokenSecret",
+								"value": "{{OAuth1:access_token_secret}}",
+								"type": "string"
+							},
+							{
+								"key": "token",
+								"value": "{{OAuth1:access_token}}",
+								"type": "string"
+							},
+							{
+								"key": "consumerSecret",
+								"value": "{{OAuth1:Consumer_Secret}}",
+								"type": "string"
+							},
+							{
+								"key": "consumerKey",
+								"value": "{{OAuth1:Consumer_ID}}",
+								"type": "string"
+							},
+							{
+								"key": "addParamsToHeader",
+								"value": true,
+								"type": "boolean"
+							},
+							{
+								"key": "signatureMethod",
+								"value": "HMAC-SHA1",
+								"type": "string"
+							},
+							{
+								"key": "version",
+								"value": "1.0",
+								"type": "string"
+							}
+						]
+					},
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									""
+								]
+							}
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "oauth1",
+				"oauth1": [
+					{
+						"key": "addEmptyParamsToSign",
+						"value": true,
+						"type": "boolean"
+					},
+					{
+						"key": "includeBodyHash",
+						"value": true,
+						"type": "boolean"
+					},
+					{
+						"key": "consumerSecret",
+						"value": "{{OAuth1:Consumer_Secret}}",
+						"type": "string"
+					},
+					{
+						"key": "consumerKey",
+						"value": "{{OAuth1:Consumer_ID}}",
+						"type": "string"
+					},
+					{
+						"key": "addParamsToHeader",
+						"value": true,
+						"type": "boolean"
+					},
+					{
+						"key": "signatureMethod",
+						"value": "HMAC-SHA1",
+						"type": "string"
+					},
+					{
+						"key": "version",
+						"value": "1.0",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "Instapaper:RootApiUrl",
+			"value": "https://www.instapaper.com/api",
+			"type": "string"
+		}
+	]
+}
